@@ -4,7 +4,7 @@ A robust permutation test for testing the hypothesis H0: ρs = 0 based on an app
 1. Prepare the CSV file and ensure your CSV file has two columns of numeric data (without headers). The script will calculate the correlation between the values in these two columns.
 2. Update the File Path
 3. Run the script
-
+## Referencs
 1. Yu, H., Hutson, A.D., 2024. A robust spearman correlation coefficient permutation test. Communications in Statistics-Theory and Methods 53, 2141–2153 (https://doi.org/10.1080/03610926.2022.2121144).
 
 ```bash
