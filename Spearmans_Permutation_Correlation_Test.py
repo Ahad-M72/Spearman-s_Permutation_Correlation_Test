@@ -1,68 +1,103 @@
+import csv
+import random
+from math import sqrt
+
 def read_csv(filepath):
-    with open(filepath, 'r') as file:
-        data = file.readlines()
+    with open(filepath, newline='') as csvfile:
+        datareader = csv.reader(csvfile)
+        headers = next(datareader)
+        data = {h: [] for h in headers}
+        for row in datareader:
+            for h, val in zip(headers, row):
+                data[h].append(float(val))
+    return data
+
+
+
+
+def spearman_rank_correlation(x, y):
+    n = len(x)
     
-    # Process rows to extract numbers
-    data = [line.strip().split(',') for line in data[1:]]  # Skip header
-    return [(float(row[0]), float(row[1])) for row in data]
+# (i) calculate the ranks
 
-def rank(data):
-    sorted_data = sorted((e, i) for i, e in enumerate(data))
-    ranks = [0] * len(data)
-    curr_rank = 1
-    # Handle ties by assigning the average rank
-    for i in range(len(sorted_data)):
-        if i > 0 and sorted_data[i][0] == sorted_data[i-1][0]:
-            curr_rank -= 1
-            avg_rank = (curr_rank + i + 1) / 2.0
-            ranks[sorted_data[i-1][1]] = avg_rank
-            ranks[sorted_data[i][1]] = avg_rank
-        else:
-            ranks[sorted_data[i][1]] = i + 1
-        curr_rank += 1
-    return ranks
+    rank_x = [sorted(x).index(v) + 1 for v in x]
+    rank_y = [sorted(y).index(v) + 1 for v in y]
 
-def calculate_spearman(filepath):
-    data = read_csv(filepath)
-    column_a, column_b = zip(*data)  # Unpack data into separate columns
 
-    ranks_a = rank(column_a)
-    ranks_b = rank(column_b)
 
-    d_squared_sum = sum((r_a - r_b) ** 2 for r_a, r_b in zip(ranks_a, ranks_b))
-    n = len(column_a)
-    spearman_corr = 1 - (6 * d_squared_sum) / (n * (n ** 2 - 1))
 
-    return spearman_corr
+# (ii) calculate spaerman's correlation (r_s)
 
-# Adjust file path accordingly
-file_path = 'path/to/your/file.csv'
-result = calculate_spearman(file_path)
-print(f"Spearman's correlation coefficient is: {result:.4f}")
-import math
+    d_squared = sum((rx - ry) ** 2 for rx, ry in zip(rank_x, rank_y))
+    return 1 - (6 * d_squared) / (n * (n**2 - 1))
 
-def calculate_spearman_p_value(r_s, n):
-    # Calculate the t-statistic from Spearman's rho
-    if r_s == 1 or r_s == -1:
-        return 0  # Perfect correlation, p-value will be effectively 0
-    t_statistic = r_s * math.sqrt((n - 2) / (1 - r_s**2))
+def calculate_moments(x, y):
+    n = len(x)
+    rank_x = [sorted(x).index(v) + 1 for v in x]
+    rank_y = [sorted(y).index(v) + 1 for v in y]
+    avg_x = sum(rank_x) / n
+    avg_y = sum(rank_y) / n
+    mu_20 = sum((rx - avg_x)**2 for rx in rank_x) / n
+    mu_02 = sum((ry - avg_y)**2 for ry in rank_y) / n
+    mu_22 = sum((rx - avg_x)**2 * (ry - avg_y)**2 for rx, ry in zip(rank_x, rank_y)) / n
+    return mu_22, mu_20, mu_02
+
+
+
+
+
+# (iii) estimate the variance of sample estimates (tau_n_squared)
+
+def calculate_variance(mu_22, mu_20, mu_02):
+    return mu_22 / (mu_20 * mu_02)
+
+
+
+
+# (iv) calculate the studentized statistic (R_s)
+
+
+def permute_test(x, y, B=1000):
+    rs = spearman_rank_correlation(x, y)
+    mu_22, mu_20, mu_02 = calculate_moments(x, y)
+    tau_n_squared = calculate_variance(mu_22, mu_20, mu_02)
+    tau_n = sqrt(tau_n_squared)
+    R_s = rs / tau_n
+    R_s_permutations = []
+
+
+
+
+# (v) calculate the studentized statistic for each permutation (R_s_permutations) 
+    for _ in range(B):
+        random.shuffle(y)  # Permute y in-place
+        rs_perm = spearman_rank_correlation(x, y)
+        R_s_permutations.append(rs_perm / tau_n)
+
+
     
-    # Approximate the p-value using Z-distribution (for large n, > 30)
-    # This is a simplification and may not be accurate for smaller sample sizes
-    z = abs(t_statistic)  # Convert t to standard normal variable
-    # Approximate the area under the curve beyond z for a two-tailed test
-    if z < 1.645:
-        return "greater than 0.1 (not significant)"
-    elif z < 1.96:
-        return "between 0.05 and 0.1 (marginally significant)"
-    elif z < 2.576:
-        return "less than 0.01 (significant)"
+# (vi) calculate the p-value
+
+    p_value = sum(1 for R_perm in R_s_permutations if abs(R_perm) > abs(R_s)) / B
+    return rs, p_value
+
+def main():
+    file_path = 'path/to/your/file.csv'
+    data = read_csv(file_path)
+    rs, p_value = permute_test(data['Column_name_1'], data['Column_name_2'])
+    
+    print(f"Spearman's Rank Correlation Coefficient: {rs}")
+    print(f"P-value from permutation test: {p_value}")
+    
+    # (vii) Decision
+
+    alpha = 0.05  # Set your significance level
+    if p_value <= alpha:
+        print("Reject the null hypothesis.")
     else:
-        return "less than 0.001 (highly significant)"
+        print("Fail to reject the null hypothesis.")
+    
+    
 
-# Example usage
-file_path = 'path/to/your/file.csv'
-r_s = calculate_spearman(file_path)
-n = 50  # Sample size
-p_value_approx = calculate_spearman_p_value(r_s, n)
-print(f"Approximate p-value range is: {p_value_approx}")
+if __name__ == "__main__":
+    main()
