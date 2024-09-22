@@ -15,7 +15,7 @@ and plaese mention the source file for generating the code in python (https://do
 
 
 ## References
-1. Yu, H., Hutson, A.D., 2024. A robust Spearman correlation coefficient permutation test. Communications in Statistics-Theory and Methods 53, 2141–2153 (https://doi.org/10.1080/03610926.2022.2121144).
+1. Yu, H., & Hutson, A. D. (2022). A robust Spearman correlation coefficient permutation test. Communications in Statistics - Theory and Methods, 53(6), 2141–2153. https://doi.org/10.1080/03610926.2022.2121144.
 
 ```bash
 python Spearmans_Permutation_Correlation_Test.py
