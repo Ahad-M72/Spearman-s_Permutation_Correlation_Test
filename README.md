@@ -8,7 +8,9 @@ A robust permutation test for testing the hypothesis H0: ρs = 0 based on an app
 ## How to Cite
 
 A DOI badge has been added to the README to reference this repository in academic publications and other documentation. This badge links directly to the Zenodo archive, providing a stable and citable DOI.
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13824277.svg)](https://doi.org/10.5281/zenodo.13824277)
+
 and plaese mention the source file for generating the code in python (https://doi.org/10.1080/03610926.2022.2121144).
 
 
